@@ -7,8 +7,16 @@ set(PYBIND11_DIR ${LIBS_DIR}/pybind11)
 find_package(PythonLibs REQUIRED)
 
 add_subdirectory(${PYBIND11_DIR})
-#pybind11_add_module(${CMAKE_PROJECT_NAME}  src/main.cpp)
-add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${PYTHON_INCLUDE_DIRS} ${PYBIND11_DIR}/include )
-target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${PYTHON_LIBRARIES})
+add_executable(${CMAKE_PROJECT_NAME} 
+    src/main.cpp
+    src/matrix.cpp
+    src/interface.cpp   
+    )
+
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC 
+    ${PYTHON_INCLUDE_DIRS} 
+    ${PYBIND11_DIR}/include 
+    )
+
+target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC ${PYTHON_LIBRARIES}) 
