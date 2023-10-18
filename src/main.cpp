@@ -1,3 +1,5 @@
+#include "win.h"
+
 #include "interface.h"
 
 #define PY_CODE "import numpy as np\n\
@@ -12,6 +14,9 @@ print(pic)"
 
 int main()
 {
+    win my_win;
+    my_win.init();
+
     pybind11::scoped_interpreter guard{};
 
     // auto sys = pybind11::module::import ("sys");
@@ -25,5 +30,20 @@ int main()
     matrix3D_print(myVec3D);
     matrix2D_free(myVec2D);
     matrix3D_free(myVec3D);
+
+    while (my_win.loop())
+    {
+        my_win.pre_renser();
+
+
+
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+
+        my_win.post_renser();
+
+    }
+    
     return 0;
 }
