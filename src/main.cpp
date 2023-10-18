@@ -39,13 +39,9 @@ int main()
         bool show_demo_window = true;
         ImGui::ShowDemoWindow(&show_demo_window);
 
-
-
         my_win.imgui_render();
         my_win.opengl_render();
 
-        // 3. draw in loop ("without index buffer" version)
-        glDrawArrays(GL_TRIANGLES, 0, 3); // draw with it, if we dont have an index buffer (); draws buffer bind with glBindBuffer
         my_win.swap_buffers();
 
     }
