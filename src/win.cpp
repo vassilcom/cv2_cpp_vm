@@ -65,7 +65,7 @@ bool win::loop()
 
 }
 
-void win::pre_renser()
+void win::pre_render()
 {
         glfwPollEvents();
 
@@ -74,16 +74,24 @@ void win::pre_renser()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 }
-void win::post_renser()
+void win::imgui_render()
 {
         // Rendering
         ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
 
-        glfwSwapBuffers(window);
+void win::opengl_render()
+{
+    // Rendering
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void win::swap_buffers()
+{
+    glfwSwapBuffers(window);
 }

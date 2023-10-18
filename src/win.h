@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <glad/glad.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -17,8 +19,10 @@ public:
 
     int init();
     bool loop();
-    void pre_renser();
-    void post_renser();
+    void pre_render();
+    void imgui_render();
+    void opengl_render();
+    void swap_buffers();
 
     GLFWwindow* window;
 
