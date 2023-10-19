@@ -20,6 +20,7 @@ Matrix3D* matrix3D_create(int row, int col, int chan){
 	matrix->rows = row;
 	matrix->cols = col;
 	matrix->chan = chan;
+	matrix->flttend3D = (unsigned char*)malloc(chan * row* col* sizeof(unsigned char));
 	matrix->entries = (double***)malloc(row * sizeof(double**));
 	for (int i = 0; i < row; i++) {
 		matrix->entries[i] = (double**)malloc(col * sizeof(double*));
@@ -47,6 +48,7 @@ void matrix3D_free(Matrix3D *m) {
 
 
 	free(m->entries);
+	free(m->flttend3D);
 	free(m);
 	m = NULL;
 }
@@ -70,4 +72,9 @@ void matrix3D_print(Matrix3D* m) {
 		}
 		printf("\n");
 	}
+	printf("3D flttend3D:\n");
+	for (int i = 0; i < m->rows * m->cols * m->chan; i++) {
+		printf("%d , ", m->flttend3D[i]);
+	}
+	printf("\n");
 }

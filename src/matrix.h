@@ -11,6 +11,7 @@ typedef struct {
 
 typedef struct {
 	double*** entries;
+	unsigned char* flttend3D;
 	int rows;
 	int cols;
     int chan;
