@@ -16,19 +16,26 @@ print('end of cv2')\n\
 static char text[1024 * 16] ="\
 pic = np.random.randint(0, high=255, size=(6, 6, 4), dtype='uint8')\n\
 if(capture.isOpened()):\n\
-    ret, frame = capture.read()\n\
-    dim = (60, 60)\n\
-    frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)\n\
-    if(ret == True):\n\
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)\n\
-        print(img)\n\
-        embeddedmodule.copy3DNumpyArray(img)\n\
-    else:\n\
-        print('no frame available')\n\
+\tret, frame = capture.read()\n\
+\tdim = (300, 300)\n\
+\tframe = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)\n\
+\n\
+\t# uncomment it for canny edges:\n\
+\t#frame = cv2.Canny(frame, 100, 200)\n\
+\n\
+\tif(ret == True):\n\
+\t\tframe = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)\n\
+\t\tframe = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)\n\
+\t\tprint(frame)\n\
+\t\tembeddedmodule.copy3DNumpyArray(frame)\n\
+\telse:\n\
+\t\tprint('no frame available')\n\
 else:\n\
-    print('no capture available. make sure that device ID is correct')\n\
+\tprint('no capture available. make sure that device ID is correct')\n\
 ";
                 
+ImVec4 frame_bg = ImVec4(0, 0.2, 0.2,1);
+
 
 bool imagedata_to_gpu(unsigned char* image_data,  GLuint* out_texture, int image_width, int image_height)
 {
@@ -54,11 +61,13 @@ bool exec_py()
 {
     try
     {
+        frame_bg =  ImVec4(0, 0.2, 0.2,1);
         pybind11::exec (text);
         return true;
     }
     catch (...)
     {
+        frame_bg = ImVec4(0.2, 0, 0,1);
         return false;
     }
 }
@@ -97,20 +106,16 @@ int main()
 
 	    ImGui::SetNextWindowPos({ 20, 350}, ImGuiCond_FirstUseEver);
 	    ImGui::SetNextWindowSize({ 700,350 }, ImGuiCond_FirstUseEver);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, frame_bg);
         if(ImGui::Begin("python loop code"))
         {
-            static char text_h[1024 * 16];
-            strcpy(text_h, text);
-            if(ImGui::InputTextMultiline("##source", text_h, IM_ARRAYSIZE(text_h), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 18),ImGuiInputTextFlags_AllowTabInput))
+            if(ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 20),ImGuiInputTextFlags_AllowTabInput))
             {
             }
 
-            if(ImGui::IsItemDeactivated())
-            {
-                strcpy(text, text_h);
-            }
         }
         ImGui::End();
+        ImGui::PopStyleColor();
 
         // render frame buffer output image
 	    ImGui::SetNextWindowPos({ 10,10 }, ImGuiCond_FirstUseEver);
@@ -123,8 +128,8 @@ int main()
             drawList->AddImage((void*)(intptr_t)my_image_texture,
                 pos,
                 ImVec2(pos.x + size.x, pos.y + size.y),
-                ImVec2(0, 1),
-                ImVec2(1, 0));
+                ImVec2(0, 0),
+                ImVec2(1, 1));
         }
         ImGui::End();
 
