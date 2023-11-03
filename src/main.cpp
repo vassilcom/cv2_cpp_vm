@@ -109,7 +109,10 @@ int main()
         ImGui::PushStyleColor(ImGuiCol_FrameBg, frame_bg);
         if(ImGui::Begin("python loop code"))
         {
-            if(ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 20),ImGuiInputTextFlags_AllowTabInput))
+			ImGuiIO& io = ImGui::GetIO();
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+            if(ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 22),ImGuiInputTextFlags_AllowTabInput))
             {
             }
 
