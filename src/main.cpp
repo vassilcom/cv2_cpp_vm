@@ -13,26 +13,26 @@ capture = cv2.VideoCapture(0)\n\
 print('end of cv2')\n\
 "
 
-static char text[1024 * 16] ="\
-pic = np.random.randint(0, high=255, size=(6, 6, 4), dtype='uint8')\n\
-if(capture.isOpened()):\n\
-\tret, frame = capture.read()\n\
-\tdim = (300, 300)\n\
-\tframe = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)\n\
-\n\
-\t# uncomment it for canny edges:\n\
-\t#frame = cv2.Canny(frame, 100, 200)\n\
-\n\
-\tif(ret == True):\n\
-\t\tframe = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)\n\
-\t\tframe = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)\n\
-\t\tprint(frame)\n\
-\t\tembeddedmodule.copy3DNumpyArray(frame)\n\
-\telse:\n\
-\t\tprint('no frame available')\n\
-else:\n\
-\tprint('no capture available. make sure that device ID is correct')\n\
-";
+static char text[1024 * 16] =R"(
+pic = np.random.randint(0, high=255, size=(6, 6, 4), dtype='uint8')
+if(capture.isOpened()):
+	ret, frame = capture.read()
+	dim = (300, 300)
+	frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
+
+	# uncomment it for canny edges:
+	#frame = cv2.Canny(frame, 100, 200)
+
+	if(ret == True):
+		frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+		frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+		print(frame)
+		embeddedmodule.copy3DNumpyArray(frame)
+	else:
+		print('no frame available')
+else:
+	print('no capture available. make sure that device ID is correct')
+)";
                 
 ImVec4 frame_bg = ImVec4(0, 0.2, 0.2,1);
 
