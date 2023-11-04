@@ -11,7 +11,13 @@ import numpy as np
 import cv2
 import embeddedmodule
 
+# on re-exec aftr code edit previous capture neds to be released.
+# vm_todo: how to get along without this ugly checkout?
+if 'capture' in globals():
+	capture.release()
+
 capture = cv2.VideoCapture(0)
+
 pic = np.random.randint(0, high=255, size=(6, 6, 4), dtype='uint8')
 
 def onFrame():
@@ -64,17 +70,23 @@ py::object global;
 
 py::function get_py_function_and_set_instance_id()
 {
-	py::function funcc = py::reinterpret_borrow<py::function>( global["onFrame"]);
+	py::function funcc;
+	try 
+	{
+		funcc = py::reinterpret_borrow<py::function>( global["onFrame"]);
+	} 
+	catch (const py::error_already_set& e) 
+	{
+		PyErr_Print();
+	}
 	return funcc;
 }
 
-// vm_todo: VideoCapture upate problem on py change
 
 void py_run()
 {
 	try 
 	{
-		frame_bg = ImVec4(0, 0.2, 0.2,1);
 		get_py_function_and_set_instance_id()();
         
 	} 
@@ -86,14 +98,14 @@ void py_run()
 
 void py_rebuild()
 {
-	
 	try 
 	{
-		frame_bg = ImVec4(0, 0.2, 0.2,1);
+		frame_bg = ImVec4(0, 0.2, 0.2, 1.0);
     	py::exec(src_text, global);
 	} 
 	catch (const py::error_already_set& e) 
 	{
+		frame_bg = ImVec4(0.2, 0.0, 0.0, 1.0);
 		PyErr_Print();
 	}
 }
@@ -123,7 +135,6 @@ int main()
 
     while (my_win.loop())
     {
-		frame_bg = ImVec4(0.2, 0.0, 0.0, 1.0);
 		py_run();
 
 
