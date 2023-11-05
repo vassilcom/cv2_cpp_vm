@@ -1,172 +1,158 @@
-
 #include "win.h"
-
-
 #include "interface.h"
+#include "matrix.h"
 
-namespace py = pybind11;
 
-static char src_text[1024 * 20] =R"(
+
+
+void imagedata_to_gpu(unsigned char* image_data,  GLuint* out_texture, int image_width, int image_height)
+{
+    // Create a OpenGL texture identifier
+    GLuint image_texture;
+    glGenTextures(1, &image_texture);
+    glBindTexture(GL_TEXTURE_2D, image_texture);
+
+    // Setup filtering parameters for display
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+    // Upload pixels into texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+    
+    *out_texture = image_texture;
+}
+
+
+static char src1[1024 * 20] =R"(
+import pybindings
+import time
+print("py src1 init")
+def onFrame(scriptOp):
+	time.sleep(0.5)
+	print("hallo from py 1")
+)";
+
+static char src2[1024 * 20] =R"(
 import numpy as np
 import cv2
-import embeddedmodule
+import pybindings
 
 # on re-exec aftr code edit previous capture neds to be released.
 # vm_todo: how to get along without this ugly checkout?
 if 'capture' in globals():
 	capture.release()
-
 capture = cv2.VideoCapture(0)
 
 pic = np.random.randint(0, high=255, size=(6, 6, 4), dtype='uint8')
 
-def onFrame():
+def onFrame(scriptOp):
 	if(capture.isOpened()):
 		ret, frame = capture.read()
 		dim = (300, 300)
 		frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
 
-		# uncomment it for canny edges:
-		#frame = cv2.Canny(frame, 100, 200)
+		if scriptOp.var_bool:
+			frame = cv2.Canny(frame, scriptOp.var_int_1, scriptOp.var_int_2)
 
 		if(ret == True):
 			frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 			frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
-			embeddedmodule.copy3DNumpyArray(frame)
+			scriptOp.copy3DNumpyArray(frame)
 		else:
 			print('no frame available')
-
 )";
 
-                
-ImVec4 frame_bg = ImVec4(0, 0.2, 0.2,1);
 
-bool imagedata_to_gpu(unsigned char* image_data,  GLuint* out_texture, int image_width, int image_height)
-{
-	// Create a OpenGL texture identifier
-	GLuint image_texture;
-	glGenTextures(1, &image_texture);
-	glBindTexture(GL_TEXTURE_2D, image_texture);
-
-	// Setup filtering parameters for display
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-	// Upload pixels into texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-	
-
-	*out_texture = image_texture;
-	return true;
-
-}
-
-    
-
-py::object global;
-
-
-py::function get_py_function_and_set_instance_id()
-{
-	py::function funcc;
-	try 
-	{
-		funcc = py::reinterpret_borrow<py::function>( global["onFrame"]);
-	} 
-	catch (const py::error_already_set& e) 
-	{
-		PyErr_Print();
-	}
-	return funcc;
-}
-
-
-void py_run()
-{
-	try 
-	{
-		get_py_function_and_set_instance_id()();
-        
-	} 
-	catch (const py::error_already_set& e) 
-	{
-		PyErr_Print();
-	}
-}
-
-void py_rebuild()
-{
-	try 
-	{
-		frame_bg = ImVec4(0, 0.2, 0.2, 1.0);
-    	py::exec(src_text, global);
-	} 
-	catch (const py::error_already_set& e) 
-	{
-		frame_bg = ImVec4(0.2, 0.0, 0.0, 1.0);
-		PyErr_Print();
-	}
-}
 
 int main()
 {
-	
     win my_win;
     my_win.init();
 
-    pybind11::scoped_interpreter guard{};
+    plugin_handler ph;
+    ph.load_plugins(src1,src2);
+    ph.async_run();
 
-	// Create a Python module and execute code from the string
-    py::module main = py::module::import("__main__");
-    global = main.attr("__dict__");
-    py_rebuild();
-	py_run();
-
-
-	if(myVec3D == nullptr)
-        myVec3D = matrix3D_create(4, 4,4); // just some black pixels
-		
     GLuint my_image_texture = 0;
-    imagedata_to_gpu(myVec3D->flttend3D, &my_image_texture, myVec3D->cols, myVec3D->rows);
-
+    
+	if (ph.myVec3D)
+		imagedata_to_gpu(ph.myVec3D->flttend3D, &my_image_texture, ph.myVec3D->cols, ph.myVec3D->rows);
+	else
+	{
+		Matrix3D* myVec3D2 = matrix3D_create(6, 6,4);
+		imagedata_to_gpu(myVec3D2->flttend3D, &my_image_texture, myVec3D2->cols, myVec3D2->rows);		
+	}
 
 
     while (my_win.loop())
     {
-		py_run();
+		if (ph.myVec3D)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ph.myVec3D->cols, ph.myVec3D->rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, ph.myVec3D->flttend3D);
+		else
+			std::cout << " NO myVec3D->is \n";
 
-
-		if(myVec3D->flttend3D)
-        	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, myVec3D->cols, myVec3D->rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, myVec3D->flttend3D);
-
+		
         my_win.pre_render();
 
-        bool show_demo_window = true;
-        ImGui::ShowDemoWindow(&show_demo_window);
 
-	    ImGui::SetNextWindowPos({ 20, 350}, ImGuiCond_FirstUseEver);
-	    ImGui::SetNextWindowSize({ 700,350 }, ImGuiCond_FirstUseEver);
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, frame_bg);
-        if(ImGui::Begin("python loop code"))
+        // bool show_demo_window = true;
+        // ImGui::ShowDemoWindow(&show_demo_window);
+
+	    ImGui::SetNextWindowPos({ 520, 10}, ImGuiCond_FirstUseEver);
+	    ImGui::SetNextWindowSize({ 748,532 }, ImGuiCond_FirstUseEver);
+        if(ImGui::Begin("plugin 2"))
         {
+
 			ImGuiIO& io = ImGui::GetIO();
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
-            if(ImGui::InputTextMultiline("##source", src_text, IM_ARRAYSIZE(src_text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 25),ImGuiInputTextFlags_AllowTabInput))
+			ImGui::Checkbox("var_bool", & ph.var_bool);
+			ImGui::SliderInt("var_int_1",&ph.var_int_1, 1,600);
+			ImGui::SliderInt("var_int_2",&ph.var_int_2, 1,600);
+
+			if(ph.error)
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2, 0.0, 0.0, 1.0));
+			else
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0.2, 0.2, 1.0));
+
+            if(ImGui::InputTextMultiline("##source", src2, IM_ARRAYSIZE(src2), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 30),ImGuiInputTextFlags_AllowTabInput))
             {
-				py_rebuild();
+				//py_rebuild();
+				ph.replace_module_with_script2(src2,1);
             }
 
+			ImGui::PopStyleColor();
         }
         ImGui::End();
-        ImGui::PopStyleColor();
+        
+		ImGui::SetNextWindowPos({ 14,476}, ImGuiCond_FirstUseEver);
+	    ImGui::SetNextWindowSize({ 338,226}, ImGuiCond_FirstUseEver);
+        if(ImGui::Begin("plugin 1"))
+        {
+
+			ImGuiIO& io = ImGui::GetIO();
+
+			if(ph.error)
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2, 0.0, 0.0, 1.0));
+			else
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0.2, 0.2, 1.0));
+
+            if(ImGui::InputTextMultiline("##source0", src1, IM_ARRAYSIZE(src1), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 14),ImGuiInputTextFlags_AllowTabInput))
+            {
+				//py_rebuild();
+				ph.replace_module_with_script2(src1,0);
+            }
+
+			ImGui::PopStyleColor();
+        }
+        ImGui::End();
 
         // render frame buffer output image
 	    ImGui::SetNextWindowPos({ 10,10 }, ImGuiCond_FirstUseEver);
-	    ImGui::SetNextWindowSize({ 320,320 }, ImGuiCond_FirstUseEver);
-        if(ImGui::Begin("image output"))
+	    ImGui::SetNextWindowSize({ 500,400 }, ImGuiCond_FirstUseEver);
+        if(ImGui::Begin("plugin 2 output"))
         {
             ImVec2 pos = ImGui::GetWindowPos();
             ImVec2 size = ImGui::GetWindowSize();
@@ -182,9 +168,8 @@ int main()
         my_win.imgui_render();
         my_win.opengl_render();
         my_win.swap_buffers();
+	}
+	ph.do_thread_loop = false;
 
-    }
-	
-    matrix3D_free(myVec3D);
     return 0;
 }
